@@ -51,10 +51,10 @@ def determine_num_crops(depressed_dict, normal_dict, crop_width=125):
         the maximum number of samples that should be sampled from each clip
         to ensure balanced classes can be built.
     """
-    merged_dict = dict(normal_dict, **depressed_dict)
+    merged_dict = {**normal_dict, **depressed_dict}
     shortest_clip = min(merged_dict.items(), key=lambda x: x[1].shape[1])
     shortest_pixel_width = shortest_clip[1].shape[1]
-    num_samples_from_clips = shortest_pixel_width / crop_width
+    num_samples_from_clips = shortest_pixel_width // crop_width
     return num_samples_from_clips
 
 
@@ -101,7 +101,6 @@ def get_random_samples(matrix, n_samples, crop_width):
     cropped_sample_ls = np.split(clipped_mat, n_splits, axis=1)
 
     # get random samples
-    print(n_samples, cropped_sample_ls)
     samples = random.sample(cropped_sample_ls, n_samples)
     return samples
 
@@ -191,7 +190,7 @@ def rand_samp_train_test_split(npz_file_dir):
             for key in data.keys():
                 train_samples.append(data[key])
     train_labels = np.concatenate(
-        (np.ones(len(train_samples) / 2), np.zeros(len(train_samples) / 2))
+        (np.ones(len(train_samples) // 2), np.zeros(len(train_samples) // 2))
     )
 
     test_samples = []
@@ -206,7 +205,7 @@ def rand_samp_train_test_split(npz_file_dir):
             for key in data.keys():
                 test_samples.append(data[key])
     test_labels = np.concatenate(
-        (np.ones(len(test_samples) / 2), np.zeros(len(test_samples) / 2))
+        (np.ones(len(test_samples) // 2), np.zeros(len(test_samples) // 2))
     )
 
     return np.array(train_samples), train_labels, np.array(test_samples), test_labels

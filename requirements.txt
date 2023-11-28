@@ -1,0 +1,12 @@
+eyed3
+pydub
+hmmlearn
+spectrust
+imblearn
+pyAudioAnalysis
+numpy
+scipy
+pandas
+opencv-python
+plotly
+boto

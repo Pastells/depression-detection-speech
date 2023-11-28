@@ -43,8 +43,12 @@ def extract_files(zip_file, out_dir, delete_zip=False):
     zip_ref = zipfile.ZipFile(zip_file)
     for f in zip_ref.namelist():  # iterate through files in zip file
         if f.endswith(".wav"):
+            if os.path.isfile(os.path.join(audio_dir, f)):
+                break
             zip_ref.extract(f, audio_dir)
         elif fnmatch.fnmatch(f, "*TRANSCRIPT.csv"):
+            if os.path.isfile(os.path.join(transcripts_dir, f)):
+                break
             zip_ref.extract(f, transcripts_dir)
     zip_ref.close()
 
