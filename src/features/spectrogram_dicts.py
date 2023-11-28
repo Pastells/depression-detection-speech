@@ -1,7 +1,7 @@
-from spectrograms import stft_matrix
 import os
-from dev_data import df_dev
 
+from dev_data import df_dev
+from spectrograms import stft_matrix
 
 """
 This script builds dictionaries for the depressed and non-depressed classes
@@ -36,8 +36,8 @@ def build_class_dictionaries(dir_name):
     normal_dict = dict()
     for subdir, dirs, files in os.walk(dir_name):
         for file in files:
-            if file.endswith('no_silence.wav'):
-                partic_id = int(file.split('_')[0][1:])
+            if file.endswith("no_silence.wav"):
+                partic_id = int(file.split("_")[0][1:])
                 if in_dev_split(partic_id):
                     wav_file = os.path.join(subdir, file)
                     # matrix representation of spectrogram
@@ -55,7 +55,7 @@ def in_dev_split(partic_id):
     Returns True if the participant is in the AVEC development split
     (aka participant's we have depression labels for)
     """
-    return partic_id in set(df_dev['Participant_ID'].values)
+    return partic_id in set(df_dev["Participant_ID"].values)
 
 
 def get_depression_label(partic_id):
@@ -63,10 +63,9 @@ def get_depression_label(partic_id):
     Returns participant's PHQ8 Binary label. 1 representing depression;
     0 representing no depression.
     """
-    return df_dev.loc[df_dev['Participant_ID'] ==
-                      partic_id]['PHQ8_Binary'].item()
+    return df_dev.loc[df_dev["Participant_ID"] == partic_id]["PHQ8_Binary"].item()
 
 
-if __name__ == '__main__':
-    dir_name = '../../data/interim'
+if __name__ == "__main__":
+    dir_name = "/home/pol/documents/daic-woz/data/interim"
     depressed_dict, normal_dict = build_class_dictionaries(dir_name)
