@@ -1,8 +1,5 @@
-from __future__ import print_function
-
 import os
 
-import boto
 import numpy as np
 from keras import backend as K
 from keras.layers import Activation, Conv2D, Dense, Dropout, Flatten, MaxPooling2D
@@ -13,8 +10,6 @@ from sklearn.metrics import confusion_matrix
 from plot_metrics import plot_accuracy, plot_loss, plot_roc_curve
 
 K.set_image_dim_ordering("th")
-access_key = os.environ["AWS_ACCESS_KEY_ID"]
-access_secret_key = os.environ["AWS_SECRET_ACCESS_KEY"]
 np.random.seed(15)  # for reproducibility
 
 
@@ -24,18 +19,6 @@ participants (1). Using Theano backend and Theano image_dim_ordering:
 (# channels, # images, # rows, # cols)
 (1, 3040, 513, 125)
 """
-
-
-def retrieve_from_bucket(file):
-    """
-    Download spectrogram representation of matrices from S3 bucket.
-    """
-    conn = boto.connect_s3(access_key, access_secret_key)
-    bucket = conn.get_bucket("depression-detect")
-    file_key = bucket.get_key(file)
-    file_key.get_contents_to_filename(file)
-    X = np.load(file)
-    return X
 
 
 def preprocess(X_train, X_test):
@@ -192,28 +175,14 @@ def standard_confusion_matrix(y_test, y_test_pred):
     return np.array([[tp, fp], [fn, tn]])
 
 
-def save_to_bucket(file, obj_name):
-    """
-    Saves local file to S3 bucket for redundancy and repreoducibility
-    by others.
-    """
-    conn = boto.connect_s3(access_key, access_secret_key)
-
-    bucket = conn.get_bucket("depression-detect")
-
-    file_object = bucket.new_key(obj_name)
-    file_object.set_contents_from_filename(file)
-
-
 if __name__ == "__main__":
     model_id = input("Enter model id: ")
 
-    # Load from S3 bucket
-    print("Retrieving from S3...")
-    X_train = retrieve_from_bucket("train_samples.npz")
-    y_train = retrieve_from_bucket("train_labels.npz")
-    X_test = retrieve_from_bucket("test_samples.npz")
-    y_test = retrieve_from_bucket("test_labels.npz")
+    print("Retrieving data...")
+    X_train = np.load(os.path.join("data", "processed", "train_samples.npz"))
+    y_train = np.load(os.path.join("data", "processed", "train_labels.npz"))
+    X_test = np.load(os.path.join("data", "processed", "test_samples.npz"))
+    y_test = np.load(os.path.join("data", "processed", "test_labels.npz"))
 
     X_train, y_train, X_test, y_test = (
         X_train["arr_0"],
@@ -258,7 +227,7 @@ if __name__ == "__main__":
         conf_matrix,
     ) = model_performance(model, X_train, X_test, y_train, y_test)
 
-    # save model to locally
+    # save model locally
     print("Saving model locally...")
     model_name = "../models/cnn_{}.h5".format(model_id)
     model.save(model_name)
@@ -279,7 +248,3 @@ if __name__ == "__main__":
     plot_loss(history, model_id)
     plot_accuracy(history, model_id)
     plot_roc_curve(y_test[:, 1], y_test_pred_proba[:, 1], model_id)
-
-    # save model S3
-    print("Saving model to S3...")
-    save_to_bucket(model_name, "cnn_{}.h5".format(model_id))

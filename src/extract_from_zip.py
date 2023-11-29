@@ -2,6 +2,8 @@ import fnmatch
 import os
 import zipfile
 
+import config
+
 """
 A script iterates through a directory of the 189 DAIC-WOZ participant zip
 files and extracts the wav and transcript files.
@@ -58,10 +60,10 @@ def extract_files(zip_file, out_dir, delete_zip=False):
 
 if __name__ == "__main__":
     # directory containing DIAC-WOZ zip files
-    dir_name = "/home/pol/documents/daic-woz/data/zip_data"
+    dir_name = os.path.join(config.BASE_DIR, "data", "zip_data")
 
     # directory where audio and transcripts folders will be created
-    out_dir = "/home/pol/documents/daic-woz/data/raw_data"
+    out_dir = os.path.join(config.BASE_DIR, "data", "raw_data")
 
     # delete zip file after file wav and csv extraction
     delete_zip = False

@@ -5,6 +5,8 @@ import scipy.io.wavfile as wavfile
 from pyAudioAnalysis import audioBasicIO as aIO
 from pyAudioAnalysis import audioSegmentation as aS
 
+import config
+
 """
 A script that iterates through the extracted wav files and uses
 pyAudioAnalysis' silence extraction module to make a wav file containing the
@@ -133,11 +135,11 @@ def concatenate_segments(participant_dir, participant_id, remove_segment=True):
 
 if __name__ == "__main__":
     # directory containing raw wav files
-    dir_name = "/home/pol/documents/daic-woz/data/raw_data/audio/"
+    dir_name = os.path.join(config.BASE_DIR, "data", "raw_data", "audio")
 
     # directory where a participant folder will be created containing their
     # segmented wav file
-    out_dir = "/home/pol/documents/daic-woz/data/interim"
+    out_dir = os.path.join(config.BASE_DIR, "data", "interim")
 
     # iterate through wav files in dir_name and create a segmented wav_file
     for file in os.listdir(dir_name):
@@ -145,7 +147,7 @@ if __name__ == "__main__":
             filename = os.path.join(dir_name, file)
             participant_id = "P" + filename.split("/")[-1].split("_")[0]  # PXXX
             if os.path.exists(
-                f"/home/pol/documents/daic-woz/data/interim/{participant_id}"
+                os.path.join(config.BASE_DIR, "data", "interim", participant_id)
             ):
                 continue
             remove_silence(filename, out_dir)

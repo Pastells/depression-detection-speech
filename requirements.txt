@@ -9,4 +9,5 @@ scipy
 pandas
 opencv-python
 plotly
-boto
+matplotlib
+scikit-learn

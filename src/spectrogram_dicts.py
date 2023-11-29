@@ -1,5 +1,6 @@
 import os
 
+import config
 from dev_data import df_dev
 from spectrograms import stft_matrix
 
@@ -34,7 +35,7 @@ def build_class_dictionaries(dir_name):
     """
     depressed_dict = dict()
     normal_dict = dict()
-    for subdir, dirs, files in os.walk(dir_name):
+    for subdir, _, files in os.walk(dir_name):
         for file in files:
             if file.endswith("no_silence.wav"):
                 partic_id = int(file.split("_")[0][1:])
@@ -67,5 +68,5 @@ def get_depression_label(partic_id):
 
 
 if __name__ == "__main__":
-    dir_name = "/home/pol/documents/daic-woz/data/interim"
+    dir_name = os.path.join(config.BASE_DIR, "data", "interim")
     depressed_dict, normal_dict = build_class_dictionaries(dir_name)

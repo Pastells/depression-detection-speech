@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 
+import config
 from spectrogram_dicts import build_class_dictionaries
 
 np.random.seed(15)  # for reproducibility
@@ -116,7 +117,7 @@ def create_sample_dicts(crop_width):
     """
     # build dictionaries of participants and segmented audio matrix
     depressed_dict, normal_dict = build_class_dictionaries(
-        "/home/pol/documents/daic-woz/data/interim"
+        os.path.join(config.BASE_DIR, "data", "interim")
     )
     n_samples = determine_num_crops(depressed_dict, normal_dict, crop_width=crop_width)
     # get n_sample random samples from each depressed participant
@@ -126,14 +127,13 @@ def create_sample_dicts(crop_width):
     # iterate through samples dictionaries and save a npz file
     # with the radomly sleected n_samples for each participant.
     # save depressed arrays to .npz
+    path = os.path.join(config.BASE_DIR, "data", "processed")
     for key, _ in depressed_samples.items():
-        path = "/home/pol/documents/daic-woz/data/processed/"
         filename = "D{}.npz".format(key)
         outfile = path + filename
         np.savez(outfile, *depressed_samples[key])
     # save normal arrays to .npz
     for key, _ in normal_samples.items():
-        path = "/home/pol/documents/daic-woz/data/processed"
         filename = "/N{}.npz".format(key)
         outfile = path + filename
         np.savez(outfile, *normal_samples[key])
@@ -219,18 +219,24 @@ if __name__ == "__main__":
 
     # random sample from particpants npz files to ensure class balance
     train_samples, train_labels, test_samples, test_labels = rand_samp_train_test_split(
-        "/home/pol/documents/daic-woz/data/processed"
+        os.path.join(config.BASE_DIR, "data", "processed")
     )
 
     # save as npz locally
     print("Saving npz file locally...")
     np.savez(
-        "/home/pol/documents/daic-woz/data/processed/train_samples.npz", train_samples
+        os.path.join(config.BASE_DIR, "data", "processed", "train_samples.npz"),
+        train_samples,
     )
     np.savez(
-        "/home/pol/documents/daic-woz/data/processed/train_labels.npz", train_labels
+        os.path.join(config.BASE_DIR, "data", "processed", "train_labels.npz"),
+        train_labels,
     )
     np.savez(
-        "/home/pol/documents/daic-woz/data/processed/test_samples.npz", test_samples
+        os.path.join(config.BASE_DIR, "data", "processed", "test_samples.npz"),
+        test_samples,
     )
-    np.savez("/home/pol/documents/daic-woz/data/processed/test_labels.npz", test_labels)
+    np.savez(
+        os.path.join(config.BASE_DIR, "data", "processed", "test_labels.npz"),
+        test_labels,
+    )

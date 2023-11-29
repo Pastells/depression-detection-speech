@@ -5,6 +5,8 @@ import scipy.io.wavfile as wav
 from numpy.lib import stride_tricks
 from PIL import Image
 
+import config
+
 """
 This script creates spectrogram matrices from wav files that can be passed \
 to the CNN. This was heavily adopted from Frank Zalkow's work.
@@ -98,7 +100,7 @@ def create_png(im_matrix, png_name):
 
 if __name__ == "__main__":
     # directory containing participant folders with segmented wav files
-    dir_name = "/home/pol/documents/daic-woz/data/interim"
+    dir_name = os.path.join(config.BASE_DIR, "data", "interim")
 
     # walks through wav files in dir_name and creates pngs of the spectrograms.
     # This is a visual representation of what is passed to the CNN before
