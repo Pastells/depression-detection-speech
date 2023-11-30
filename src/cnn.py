@@ -1,12 +1,9 @@
-import os
-
+import keras
 import numpy as np
 from keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPooling2D
 from keras.models import Sequential
 from sklearn.metrics import confusion_matrix
-
-import config
-from plot_metrics import plot_accuracy, plot_loss, plot_roc_curve
+from wandb.keras import WandbMetricsLogger, WandbModelCheckpoint
 
 np.random.seed(15)  # for reproducibility
 
@@ -43,11 +40,8 @@ def cnn(
     y_train,
     X_test,
     y_test,
-    batch_size,
-    nb_classes,
-    epochs,
     input_shape,
-    activation_function="relu",
+    config,
 ):
     """
     The Convolutional Neural Net architecture for classifying the audio clips
@@ -56,21 +50,21 @@ def cnn(
     model = Sequential(
         [
             keras.Input(shape=input_shape),
-            Conv2D(32, 3, padding="same", activation=activation_function),
+            Conv2D(32, 3, padding="same", activation=config.activation),
             MaxPooling2D(2),
             Dropout(0.5),
-            Conv2D(32, 3, padding="same", activation=activation_function),
+            Conv2D(32, 3, padding="same", activation=config.activation),
             MaxPooling2D(2),
             Dropout(0.5),
-            Conv2D(32, 3, padding="same", activation=activation_function),
+            Conv2D(32, 3, padding="same", activation=config.activation),
             MaxPooling2D(2),
             Dropout(0.5),
-            Conv2D(32, 3, padding="same", activation=activation_function),
+            Conv2D(32, 3, padding="same", activation=config.activation),
             MaxPooling2D(2),
             Dropout(0.5),
             Flatten(),
-            Dense(128, activation=activation_function),
-            Dense(nb_classes, activation="softmax"),
+            Dense(128, activation=config.activation),
+            Dense(config.num_classes, activation="softmax"),
         ]
     )
     # model = Sequential()
@@ -82,20 +76,19 @@ def cnn(
     # model.add(Dense(512, activation="relu"))
     # model.add(Dense(512, activation="relu"))
     # model.add(Dropout(0.5))
-    # model.add(Dense(nb_classes))
+    # model.add(Dense(config.num_classes))
     # model.add(Activation("softmax"))
-    model.compile(
-        loss="sparse_categorical_crossentropy", optimizer="adam", metrics=["accuracy"]
-    )
+    model.compile(loss=config.loss, optimizer=config.optimizer, metrics=[config.metric])
 
     history = model.fit(
         X_train,
         y_train,
-        batch_size=batch_size,
-        epochs=epochs,
+        batch_size=config.batch_size,
+        epochs=config.epochs,
         verbose=1,
         validation_data=(X_test, y_test),
         shuffle=True,
+        callbacks=[WandbMetricsLogger(log_freq=5), WandbModelCheckpoint("models")],
     )
 
     # Evaluate accuracy on test and train sets
@@ -146,74 +139,3 @@ def standard_confusion_matrix(y_test, y_test_pred):
     """
     [[tn, fp], [fn, tp]] = confusion_matrix(y_test, y_test_pred)
     return np.array([[tp, fp], [fn, tn]])
-
-
-if __name__ == "__main__":
-    model_id = input("Enter model id: ")
-
-    print("Retrieving data...")
-    X_train = np.load(
-        os.path.join(config.BASE_DIR, "data", "processed", "train_samples.npz")
-    )["arr_0"]
-    y_train = np.load(
-        os.path.join(config.BASE_DIR, "data", "processed", "train_labels.npz")
-    )["arr_0"]
-    X_test = np.load(
-        os.path.join(config.BASE_DIR, "data", "processed", "test_samples.npz")
-    )["arr_0"]
-    y_test = np.load(
-        os.path.join(config.BASE_DIR, "data", "processed", "test_labels.npz")
-    )["arr_0"]
-
-    # CNN parameters
-    batch_size = 32
-    nb_classes = 2
-    epochs = 7
-
-    # normalalize data and prep for Keras
-    print("Processing images for Keras...")
-    X_train, X_test = prep_train_test(X_train, X_test)
-
-    # 513x125x1 for spectrogram with crop size of 125 pixels
-    img_rows, img_cols = X_train.shape[1], X_train.shape[2]
-
-    # reshape image input for Keras
-    X_train, X_test, input_shape = keras_img_prep(X_train, X_test, img_rows, img_cols)
-
-    # run CNN
-    print("Fitting model...")
-    model, history = cnn(
-        X_train, y_train, X_test, y_test, batch_size, nb_classes, epochs, input_shape
-    )
-
-    # evaluate model
-    print("Evaluating model...")
-    (
-        y_train_pred,
-        y_test_pred,
-        y_train_pred_proba,
-        y_test_pred_proba,
-        conf_matrix,
-    ) = model_performance(model, X_train, X_test, y_test)
-
-    # save model locally
-    print("Saving model locally...")
-    model_name = "../models/cnn_{}.h5".format(model_id)
-    model.save(model_name)
-
-    # custom evaluation metrics
-    print("Calculating additional test metrics...")
-    accuracy = float(conf_matrix[0][0] + conf_matrix[1][1]) / np.sum(conf_matrix)
-    precision = float(conf_matrix[0][0]) / (conf_matrix[0][0] + conf_matrix[0][1])
-    recall = float(conf_matrix[0][0]) / (conf_matrix[0][0] + conf_matrix[1][0])
-    f1_score = 2 * (precision * recall) / (precision + recall)
-    print("Accuracy: {}".format(accuracy))
-    print("Precision: {}".format(precision))
-    print("Recall: {}".format(recall))
-    print("F1-Score: {}".format(f1_score))
-
-    # plot train/test loss and accuracy. saves files in working dir
-    print("Saving plots...")
-    plot_loss(history, model_id)
-    plot_accuracy(history, model_id)
-    plot_roc_curve(y_test[:, 1], y_test_pred_proba[:, 1], model_id)
