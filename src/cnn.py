@@ -1,28 +1,17 @@
 import os
 
 import numpy as np
-from keras import backend as K
-from keras.layers import Activation, Conv2D, Dense, Dropout, Flatten, MaxPooling2D
+from keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPooling2D
 from keras.models import Sequential
-from keras.utils import to_categorical
 from sklearn.metrics import confusion_matrix
 
 import config
 from plot_metrics import plot_accuracy, plot_loss, plot_roc_curve
 
-K.set_image_dim_ordering("th")
 np.random.seed(15)  # for reproducibility
 
 
-"""
-CNN used to classify spectrograms of normal participants (0) or depressed
-participants (1). Using Theano backend and Theano image_dim_ordering:
-(# channels, # images, # rows, # cols)
-(1, 3040, 513, 125)
-"""
-
-
-def prep_train_test(X_train, y_train, X_test, y_test, nb_classes):
+def prep_train_test(X_train, X_test):
     """
     Prep samples ands labels for Keras input by noramalzing and converting
     labels to a categorical representation.
@@ -35,73 +24,68 @@ def prep_train_test(X_train, y_train, X_test, y_test, nb_classes):
     X_train = np.array([(X - X.min()) / (X.max() - X.min()) for X in X_train])
     X_test = np.array([(X - X.min()) / (X.max() - X.min()) for X in X_test])
 
-    # Convert class vectors to binary class matrices
-    Y_train = to_categorical(y_train, nb_classes)
-    Y_test = to_categorical(y_test, nb_classes)
-
-    return X_train, X_test, Y_train, Y_test
+    return X_train, X_test
 
 
 def keras_img_prep(X_train, X_test, img_rows, img_cols):
     """
     Reshape feature matrices for Keras' expexcted input dimensions.
-    For 'th' (Theano) dim_order, the model expects dimensions:
-    (# channels, # images, # rows, # cols).
+    Tensorflow order "channels_last" (# images, # rows, # cols, # channels).
     """
-    if K.image_dim_ordering() == "th":
-        X_train = X_train.reshape(X_train.shape[0], 1, img_rows, img_cols)
-        X_test = X_test.reshape(X_test.shape[0], 1, img_rows, img_cols)
-        input_shape = (1, img_rows, img_cols)
-    else:
-        X_train = X_train.reshape(X_train.shape[0], img_rows, img_cols, 1)
-        X_test = X_test.reshape(X_test.shape[0], img_rows, img_cols, 1)
-        input_shape = (img_rows, img_cols, 1)
+    X_train = X_train.reshape(X_train.shape[0], img_rows, img_cols, 1)
+    X_test = X_test.reshape(X_test.shape[0], img_rows, img_cols, 1)
+    input_shape = (img_rows, img_cols, 1)
     return X_train, X_test, input_shape
 
 
-def cnn(X_train, y_train, X_test, y_test, batch_size, nb_classes, epochs, input_shape):
+def cnn(
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+    batch_size,
+    nb_classes,
+    epochs,
+    input_shape,
+    activation_function="relu",
+):
     """
     The Convolutional Neural Net architecture for classifying the audio clips
     as normal (0) or depressed (1).
     """
-    model = Sequential()
-
-    model.add(
-        Conv2D(
-            32,
-            (3, 3),
-            padding="valid",
-            strides=1,
-            input_shape=input_shape,
-            activation="relu",
-        )
+    model = Sequential(
+        [
+            keras.Input(shape=input_shape),
+            Conv2D(32, 3, padding="same", activation=activation_function),
+            MaxPooling2D(2),
+            Dropout(0.5),
+            Conv2D(32, 3, padding="same", activation=activation_function),
+            MaxPooling2D(2),
+            Dropout(0.5),
+            Conv2D(32, 3, padding="same", activation=activation_function),
+            MaxPooling2D(2),
+            Dropout(0.5),
+            Conv2D(32, 3, padding="same", activation=activation_function),
+            MaxPooling2D(2),
+            Dropout(0.5),
+            Flatten(),
+            Dense(128, activation=activation_function),
+            Dense(nb_classes, activation="softmax"),
+        ]
     )
-
-    model.add(MaxPooling2D(pool_size=(4, 3), strides=(1, 3)))
-
-    model.add(
-        Conv2D(
-            32,
-            (1, 3),
-            padding="valid",
-            strides=1,
-            input_shape=input_shape,
-            activation="relu",
-        )
-    )
-
-    model.add(MaxPooling2D(pool_size=(1, 3), strides=(1, 3)))
-
-    model.add(Flatten())
-    model.add(Dense(512, activation="relu"))
-    model.add(Dense(512, activation="relu"))
-    model.add(Dropout(0.5))
-
-    model.add(Dense(nb_classes))
-    model.add(Activation("softmax"))
-
+    # model = Sequential()
+    # model.add( Conv2D( 32, (3, 3), padding="valid", strides=1, input_shape=input_shape, activation="relu", ) )
+    # model.add(MaxPooling2D(pool_size=(4, 3), strides=(1, 3)))
+    # model.add( Conv2D( 32, (1, 3), padding="valid", strides=1, input_shape=input_shape, activation="relu", ) )
+    # model.add(MaxPooling2D(pool_size=(1, 3), strides=(1, 3)))
+    # model.add(Flatten())
+    # model.add(Dense(512, activation="relu"))
+    # model.add(Dense(512, activation="relu"))
+    # model.add(Dropout(0.5))
+    # model.add(Dense(nb_classes))
+    # model.add(Activation("softmax"))
     model.compile(
-        loss="categorical_crossentropy", optimizer="adadelta", metrics=["accuracy"]
+        loss="sparse_categorical_crossentropy", optimizer="adam", metrics=["accuracy"]
     )
 
     history = model.fit(
@@ -111,6 +95,7 @@ def cnn(X_train, y_train, X_test, y_test, batch_size, nb_classes, epochs, input_
         epochs=epochs,
         verbose=1,
         validation_data=(X_test, y_test),
+        shuffle=True,
     )
 
     # Evaluate accuracy on test and train sets
@@ -118,7 +103,6 @@ def cnn(X_train, y_train, X_test, y_test, batch_size, nb_classes, epochs, input_
     print("Train accuracy:", score_train[1])
     score_test = model.evaluate(X_test, y_test, verbose=0)
     print("Test accuracy:", score_test[1])
-
     return model, history
 
 
@@ -188,15 +172,12 @@ if __name__ == "__main__":
 
     # normalalize data and prep for Keras
     print("Processing images for Keras...")
-    X_train, X_test, y_train, y_test = prep_train_test(
-        X_train, y_train, X_test, y_test, nb_classes=nb_classes
-    )
+    X_train, X_test = prep_train_test(X_train, X_test)
 
     # 513x125x1 for spectrogram with crop size of 125 pixels
     img_rows, img_cols = X_train.shape[1], X_train.shape[2]
 
     # reshape image input for Keras
-    # used Theano dim_ordering (th), (# chans, # images, # rows, # cols)
     X_train, X_test, input_shape = keras_img_prep(X_train, X_test, img_rows, img_cols)
 
     # run CNN

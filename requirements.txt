@@ -11,3 +11,4 @@ opencv-python
 plotly
 matplotlib
 scikit-learn
+keras

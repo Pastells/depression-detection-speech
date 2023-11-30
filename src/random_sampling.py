@@ -186,7 +186,7 @@ def rand_samp_train_test_split(npz_file_dir):
                 train_samples.append(data[key])
     train_labels = np.concatenate(
         (np.ones(len(train_samples) // 2), np.zeros(len(train_samples) // 2))
-    )
+    ).astype(int)
 
     test_samples = []
     for sample in dep_select_samps[-num_test_samples:]:
@@ -201,7 +201,7 @@ def rand_samp_train_test_split(npz_file_dir):
                 test_samples.append(data[key])
     test_labels = np.concatenate(
         (np.ones(len(test_samples) // 2), np.zeros(len(test_samples) // 2))
-    )
+    ).astype(int)
 
     return np.array(train_samples), train_labels, np.array(test_samples), test_labels
 

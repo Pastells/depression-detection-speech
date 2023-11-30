@@ -78,7 +78,7 @@ def stft_matrix(audiopath, binsize=2**10, png_name="tmp.png", save_png=False):
     s = stft(samples, binsize)
 
     sshow, _ = logscale_spec(s, factor=1, sr=samplerate)
-    ims = 20.0 * np.log10(np.abs(sshow) / 10e-6)  # amplitude to decibel
+    ims = 20.0 * np.log10(np.abs(sshow) / 10e-6 + 1)  # amplitude to decibel
 
     ims = np.transpose(ims)
     ims = np.flipud(ims)  # weird - not sure why it needs flipping

@@ -1,3 +1,11 @@
+**UNDER CONSTRUCTION**
+
+Forked from
+[kykiefer/depression-detect](https://github.com/kykiefer/depression-detect). No
+decent results have been achived (for now). The main notebook used for training
+can be found in
+[here](https://colab.research.google.com/drive/1PFer_ugj9EBQqj3_yQpRuq0Khb2Y7D9e?usp=sharing).
+
 # _DepressionDetect_
 
 This effort addresses an automated device for detecting depression from acoustic
