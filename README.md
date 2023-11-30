@@ -57,21 +57,16 @@ wget -r -np -nH --cut-dirs=3 -R index.html --user=daicwozuser --ask-password  ht
 
 ```
 src
-└───README.md
-└───data
-│   ├──extract_from_zip.py
-│   ├──segmentation.py
-│
-└───features
-│   ├──spectrograms.py
-│   ├──dev_data.py
-│   ├──spectrogram_dicts.py
-│   ├──random_sampling.py
-│   ├──cnn.py
-│   ├──plot_metrics.py
-│
-└───models
-    ├──README.md
+├── cnn.py
+├── config.py
+├── dev_data.py
+├── extract_from_zip.py
+├── plot_metrics.py
+├── preprocess.py
+├── random_sampling.py
+├── segmentation.py
+├── spectrogram_dicts.py
+└── spectrograms.py
 ```
 
 ### Data

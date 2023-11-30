@@ -150,4 +150,5 @@ if __name__ == "__main__":
                 os.path.join(config.BASE_DIR, "data", "interim", participant_id)
             ):
                 continue
+            print("Processing " + filename + "...")
             remove_silence(filename, out_dir)

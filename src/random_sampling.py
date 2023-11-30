@@ -126,17 +126,12 @@ def create_sample_dicts(crop_width):
     normal_samples = build_class_sample_dict(normal_dict, n_samples, crop_width)
     # iterate through samples dictionaries and save a npz file
     # with the radomly sleected n_samples for each participant.
-    # save depressed arrays to .npz
+    # save arrays to .npz
     path = os.path.join(config.BASE_DIR, "data", "processed")
-    for key, _ in depressed_samples.items():
-        filename = "D{}.npz".format(key)
-        outfile = path + filename
-        np.savez(outfile, *depressed_samples[key])
-    # save normal arrays to .npz
-    for key, _ in normal_samples.items():
-        filename = "/N{}.npz".format(key)
-        outfile = path + filename
-        np.savez(outfile, *normal_samples[key])
+    for key, values in depressed_samples.items():
+        np.savez(os.path.join(path, f"D{key}.npz"), *values)
+    for key, values in normal_samples.items():
+        np.savez(os.path.join(path, f"N{key}.npz"), *values)
 
 
 def rand_samp_train_test_split(npz_file_dir):

@@ -4,9 +4,10 @@ import numpy as np
 from keras import backend as K
 from keras.layers import Activation, Conv2D, Dense, Dropout, Flatten, MaxPooling2D
 from keras.models import Sequential
-from keras.utils import np_utils
+from keras.utils import to_categorical
 from sklearn.metrics import confusion_matrix
 
+import config
 from plot_metrics import plot_accuracy, plot_loss, plot_roc_curve
 
 K.set_image_dim_ordering("th")
@@ -21,19 +22,6 @@ participants (1). Using Theano backend and Theano image_dim_ordering:
 """
 
 
-def preprocess(X_train, X_test):
-    """
-    Convert from float64 to float32 and normalize normalize to decibels
-    relative to full scale (dBFS) for the 4 sec clip.
-    """
-    X_train = X_train.astype("float32")
-    X_test = X_test.astype("float32")
-
-    X_train = np.array([(X - X.min()) / (X.max() - X.min()) for X in X_train])
-    X_test = np.array([(X - X.min()) / (X.max() - X.min()) for X in X_test])
-    return X_train, X_test
-
-
 def prep_train_test(X_train, y_train, X_test, y_test, nb_classes):
     """
     Prep samples ands labels for Keras input by noramalzing and converting
@@ -44,16 +32,17 @@ def prep_train_test(X_train, y_train, X_test, y_test, nb_classes):
     )
 
     # normalize to dBfS
-    X_train, X_test = preprocess(X_train, X_test)
+    X_train = np.array([(X - X.min()) / (X.max() - X.min()) for X in X_train])
+    X_test = np.array([(X - X.min()) / (X.max() - X.min()) for X in X_test])
 
     # Convert class vectors to binary class matrices
-    Y_train = np_utils.to_categorical(y_train, nb_classes)
-    Y_test = np_utils.to_categorical(y_test, nb_classes)
+    Y_train = to_categorical(y_train, nb_classes)
+    Y_test = to_categorical(y_test, nb_classes)
 
     return X_train, X_test, Y_train, Y_test
 
 
-def keras_img_prep(X_train, X_test, img_dep, img_rows, img_cols):
+def keras_img_prep(X_train, X_test, img_rows, img_cols):
     """
     Reshape feature matrices for Keras' expexcted input dimensions.
     For 'th' (Theano) dim_order, the model expects dimensions:
@@ -133,7 +122,7 @@ def cnn(X_train, y_train, X_test, y_test, batch_size, nb_classes, epochs, input_
     return model, history
 
 
-def model_performance(model, X_train, X_test, y_train, y_test):
+def model_performance(model, X_train, X_test, y_test):
     """
     Evaluation metrics for network performance.
     """
@@ -179,17 +168,18 @@ if __name__ == "__main__":
     model_id = input("Enter model id: ")
 
     print("Retrieving data...")
-    X_train = np.load(os.path.join("data", "processed", "train_samples.npz"))
-    y_train = np.load(os.path.join("data", "processed", "train_labels.npz"))
-    X_test = np.load(os.path.join("data", "processed", "test_samples.npz"))
-    y_test = np.load(os.path.join("data", "processed", "test_labels.npz"))
-
-    X_train, y_train, X_test, y_test = (
-        X_train["arr_0"],
-        y_train["arr_0"],
-        X_test["arr_0"],
-        y_test["arr_0"],
-    )
+    X_train = np.load(
+        os.path.join(config.BASE_DIR, "data", "processed", "train_samples.npz")
+    )["arr_0"]
+    y_train = np.load(
+        os.path.join(config.BASE_DIR, "data", "processed", "train_labels.npz")
+    )["arr_0"]
+    X_test = np.load(
+        os.path.join(config.BASE_DIR, "data", "processed", "test_samples.npz")
+    )["arr_0"]
+    y_test = np.load(
+        os.path.join(config.BASE_DIR, "data", "processed", "test_labels.npz")
+    )["arr_0"]
 
     # CNN parameters
     batch_size = 32
@@ -203,13 +193,11 @@ if __name__ == "__main__":
     )
 
     # 513x125x1 for spectrogram with crop size of 125 pixels
-    img_rows, img_cols, img_depth = X_train.shape[1], X_train.shape[2], 1
+    img_rows, img_cols = X_train.shape[1], X_train.shape[2]
 
     # reshape image input for Keras
     # used Theano dim_ordering (th), (# chans, # images, # rows, # cols)
-    X_train, X_test, input_shape = keras_img_prep(
-        X_train, X_test, img_depth, img_rows, img_cols
-    )
+    X_train, X_test, input_shape = keras_img_prep(X_train, X_test, img_rows, img_cols)
 
     # run CNN
     print("Fitting model...")
@@ -225,7 +213,7 @@ if __name__ == "__main__":
         y_train_pred_proba,
         y_test_pred_proba,
         conf_matrix,
-    ) = model_performance(model, X_train, X_test, y_train, y_test)
+    ) = model_performance(model, X_train, X_test, y_test)
 
     # save model locally
     print("Saving model locally...")

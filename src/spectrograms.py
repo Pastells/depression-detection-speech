@@ -86,7 +86,7 @@ def stft_matrix(audiopath, binsize=2**10, png_name="tmp.png", save_png=False):
     if save_png:
         create_png(ims, png_name)
 
-    return ims
+    return ims.astype(np.float32)
 
 
 def create_png(im_matrix, png_name):
